@@ -1,0 +1,94 @@
+# double_rotation.mbd
+
+begin: data;
+   problem: initial value;
+end: data;
+
+begin: initial value;
+   initial time:   0.0;
+   final time:     10;
+   time step:      1.e-4;
+   max iterations: 10;
+   tolerance:      1.e-6;
+end: initial value;
+
+begin: control data;
+   structural nodes: 2;
+   rigid bodies:     1;
+   joints:           2;
+   forces:			 1;
+default orientation: orientation vector;
+end: control data;
+
+# Design Variables
+set: real M = 1.; # Mass of Link1 and Link2
+set: real L = 1.; # Length of Link1 and Link2
+
+# Additional Variables
+set: real Omega_1 = 50.;
+
+# Reference Labels
+set: integer Ref_1 = 2;
+
+# Node Labels
+set: integer Node_Ground = 1;
+set: integer Node_Link1 = 2;
+
+# Body Labels
+set: integer Body_Link1 = 1;
+
+# Joint Labels
+set: integer JoClamp_Ground     = 1;
+set: integer JoRevp_Link1       = 2;
+
+# Reference
+
+reference: Ref_1,
+   null,                        # absolute position
+   eye, 						# absolute orientation
+   null,                        # absolute velocity
+   null;                        # absolute angular velocity
+
+begin: nodes;
+   structural: Node_Ground, static,
+      null, 			 # absolute position
+      eye,        	 	 # absolute orientation
+      null, 			 # absolute position
+      null; 			 # absolute position
+   
+   structural: Node_Link1, dynamic,
+      1./2.*L, 0., 0., 						# absolute position
+      eye,             						# absolute orientation
+      null,           # absolute velocity
+      null;           # absolute angular velocity
+      
+end: nodes;
+
+begin: elements;
+
+   #-----------------------------------------------------------------------------
+   # Bodies
+   body: Body_Link1, Node_Link1,
+      M,                                # mass
+      null,                             # relative center of mass
+      diag, 0., M*L^2./12., M*L^2./12.; # inertia matrix
+   #-----------------------------------------------------------------------------
+   # Joints  
+   joint: JoClamp_Ground,
+      clamp,
+         Node_Ground,
+            null, # absolute position
+            eye;  # absolute orientation
+                
+   joint: JoRevp_Link1, 
+      axial rotation, 
+         Node_Ground,
+            null,                     # relative offset
+            hinge, 1, 1., 0., 0., 2, 0., 1., 0., # relative orientation
+         Node_Link1,
+            reference, Ref_1, null,                                # relative offset
+            hinge, 1, 1., 0., 0., 2, 0., 1., 0., # relative axis orientation
+         const, Omega_1;    # angular velocity
+
+   force: 10, external structural, socket, create, yes, path, "case.sock", no signal, sleep time, 0.05, coupling, tight, orientation, orientation vector, accelerations, no, 1, Node_Link1;
+end: elements;
