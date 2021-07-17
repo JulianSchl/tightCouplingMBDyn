@@ -37,7 +37,7 @@ while(True):
 		break
 	
 	print(np.reshape(nodal.n_x, (-1, 3)))
-	import ipdb; ipdb.set_trace()
+	#import ipdb; ipdb.set_trace()
 	
 	if nodal.send(True):
 		print('Something went wrong on send!')
